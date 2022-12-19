@@ -1,0 +1,5 @@
+useDynLib(opendp-testpkg, .registration = TRUE)
+
+export(applyFun)
+export(squareIt)
+
