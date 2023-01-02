@@ -1,9 +1,11 @@
-Package: opendp-testpkg
-Version: 0.0.1
+Package: opendp
+Version: 0.0.2
 Title: OpenDP test package
 Author: S. M. Iacus
 Maintainer: Stefano M. Iacus <siacus@iq.harvard.edu>
 Description: Testing C calls.
 License: GPL (>= 2)
 NeedsCompilation: yes
+
+
 

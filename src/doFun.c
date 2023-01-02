@@ -44,6 +44,63 @@ SEXP mkans(double x);
 double feval(double x, SEXP f, SEXP rho);
 
 
+static SEXP OPENDP_tag; // tag for external pointer objects
+// we should change this later to AnyObject or similar
+
+#define CHECK_OPENDP_OBJECT(s) do {          \
+if (TYPEOF(s) != EXTPTRSXP ||             \
+    R_ExternalPtrTag(s) !=  OPENDP_tag) \
+  error("bad OpenDP object");           \
+} while (0)
+
+
+// new function headers 
+SEXP create(SEXP info);
+SEXP get(SEXP XPtr);
+SEXP set(SEXP XPtr, SEXP str);
+  
+  
+// taken from here with some changes
+// https://stackoverflow.com/questions/7032617/storing-c-objects-in-r
+
+// finalizer is call when the object is clear on the R side with
+// something like obj <- NULL
+
+static void _finalizer(SEXP XPtr){
+  if (NULL == R_ExternalPtrAddr(XPtr))
+    return;
+  CHECK_OPENDP_OBJECT(XPtr); 
+  Rprintf("finalizing\n");
+  char *ptr = (char *) R_ExternalPtrAddr(XPtr);
+  Free(ptr);
+  R_ClearExternalPtr(XPtr);
+}
+
+const int N_MAX=15;
+
+// this creates a C object and embeds it in an R object
+SEXP create(SEXP info){
+  char *x = Calloc(N_MAX, char);
+  snprintf(x, N_MAX, "I am an OpenDP obj");
+  SEXP XPtr = PROTECT(R_MakeExternalPtr(x, OPENDP_tag, info));
+  R_RegisterCFinalizerEx(XPtr, _finalizer, TRUE); // important to register the proper fnalizer
+  UNPROTECT(1);
+  
+  return XPtr;
+}
+
+SEXP get(SEXP XPtr){
+  return mkString((char *) R_ExternalPtrAddr(XPtr));
+}
+
+
+SEXP set(SEXP XPtr, SEXP str){
+  char *x = (char *) R_ExternalPtrAddr(XPtr);
+  snprintf(x, N_MAX, CHAR(STRING_ELT(str, 0)));
+  return ScalarLogical(TRUE);
+}
+
+
 /* function bodies */
 SEXP apply_Fun(SEXP x, SEXP f, SEXP rho)
 {
@@ -84,12 +141,17 @@ SEXP square_It(SEXP x)
 static R_CMethodDef R_CDef[] = {
    {"square_It", (DL_FUNC)&square_It, 1}, /* here you register the DLL entry points to local C functions and explicit the number of arguments */
    {"apply_Fun", (DL_FUNC)&apply_Fun, 3},
+   {"create", (DL_FUNC)&create, 1},
+   {"get", (DL_FUNC)&get, 1},
+   {"set", (DL_FUNC)&set, 2},
    {NULL, NULL, 0},
 };
 
-void R_init_testpkg(DllInfo *info)
+
+void R_init_opendp(DllInfo *info)
 {
     R_registerRoutines(info, R_CDef, NULL, NULL, NULL);
+    OPENDP_tag = install("OPENDP_TAG");
     R_useDynamicSymbols(info, TRUE);
 }
 

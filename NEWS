@@ -1,3 +1,8 @@
+v 0.0.2 - 20230102
+* first version with basic external pointers handling
+* createODP, setODP, getODP functions added
+* changed package name, dash "-" not allowed in pkg names
+
 v 0.0.1
 * simple skeleton
  

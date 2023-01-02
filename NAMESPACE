@@ -1,5 +1,9 @@
-useDynLib(opendp-testpkg, .registration = TRUE)
+useDynLib(opendp, .registration = TRUE)
 
 export(applyFun)
 export(squareIt)
+export(createODP)
+export(setODP)
+export(getODP)
+
 
