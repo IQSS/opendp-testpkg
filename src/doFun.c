@@ -62,6 +62,11 @@ SEXP set(SEXP XPtr, SEXP str);
   
 // taken from here with some changes
 // https://stackoverflow.com/questions/7032617/storing-c-objects-in-r
+// See also: http://homepage.divms.uiowa.edu/~luke/R/simpleref.html
+// My old pkg RRP  https://github.com/siacus/rrp
+// and of course R Devel guide
+// https://cran.rstudio.com/doc/manuals/r-devel/R-exts.html#External-pointers-and-weak-references
+
 
 // finalizer is call when the object is clear on the R side with
 // something like obj <- NULL
