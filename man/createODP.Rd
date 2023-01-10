@@ -21,7 +21,7 @@ getODP(x)
   \item{info}{any R object, but we can use it to store the opendp library Type}
 }
 \value{
-  The result
+  The result is an External Pointer
 }
 \details{
   Test functions to create, set and get external pointer objects.

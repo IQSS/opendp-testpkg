@@ -27,3 +27,6 @@ applyFun <- function(x, fun = NULL){
   .Call("apply_Fun",x,fun, new.env(), PACKAGE="opendp")
 }
 
+slice_as_object <- function(data) {
+  .Call("slice_as_object__wrapper", data, PACKAGE = 'opendp')
+}

@@ -5,5 +5,5 @@ export(squareIt)
 export(createODP)
 export(setODP)
 export(getODP)
-
+export(slice_as_object)
 

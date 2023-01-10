@@ -34,6 +34,13 @@
 #include <Rinternals.h>
 #include <R_ext/Complex.h>
 
+
+//#include <stdio.h>
+
+// Import C headers for rust API
+#include "opendp_base.h"
+#include "opendp.h"
+
 /* headers */
 SEXP square_It(SEXP x);
 SEXP apply_Fun(SEXP x, SEXP f, SEXP rho);
@@ -47,12 +54,20 @@ double feval(double x, SEXP f, SEXP rho);
 static SEXP OPENDP_tag; // tag for external pointer objects
 // we should change this later to AnyObject or similar
 
+static SEXP AnyObject_tag;
+
 #define CHECK_OPENDP_OBJECT(s) do {          \
 if (TYPEOF(s) != EXTPTRSXP ||             \
     R_ExternalPtrTag(s) !=  OPENDP_tag) \
   error("bad OpenDP object");           \
 } while (0)
 
+
+#define CHECK_AnyObject_OBJECT(s) do {          \
+if (TYPEOF(s) != EXTPTRSXP ||                \
+    R_ExternalPtrTag(s) !=  AnyObject_tag)      \
+  error("bad AnyObject object");                \
+} while (0)
 
 // new function headers 
 SEXP create(SEXP info);
@@ -81,6 +96,16 @@ static void _finalizer(SEXP XPtr){
   R_ClearExternalPtr(XPtr);
 }
 
+static void _finalizer_AnyObject(SEXP XPtr){
+  if (NULL == R_ExternalPtrAddr(XPtr))
+    return;
+  CHECK_AnyObject_OBJECT(XPtr); 
+  Rprintf("finalizing\n");
+  char *ptr = (char *) R_ExternalPtrAddr(XPtr);
+  Free(ptr);
+  R_ClearExternalPtr(XPtr);
+}
+
 const int N_MAX=15;
 
 // this creates a C object and embeds it in an R object
@@ -101,7 +126,7 @@ SEXP get(SEXP XPtr){
 
 SEXP set(SEXP XPtr, SEXP str){
   char *x = (char *) R_ExternalPtrAddr(XPtr);
-  snprintf(x, N_MAX, CHAR(STRING_ELT(str, 0)));
+  snprintf(x, N_MAX, "%s", R_CHAR(STRING_ELT(str, 0)));
   return ScalarLogical(TRUE);
 }
 
@@ -142,6 +167,52 @@ SEXP square_It(SEXP x)
   return(ans); 
 }
 
+
+// returns a void* to the underlying data, and saves the typename
+void *extract_pointer(SEXP val, char *typename) {
+  
+  switch( TYPEOF(val) ) {
+  case INTSXP:
+    strcpy(typename, "Vec<i32>\0");
+    printf("INTSXP\n");
+    return INTEGER(val);
+  case REALSXP:
+    strcpy(typename, "Vec<f64>\0");
+    printf("REALSXP\n");
+    return REAL(val);
+  default:
+    return NULL;
+  }
+}
+
+SEXP slice_as_object__wrapper(SEXP data) {
+  
+  // This choice of size is the longest currently-supported typename.
+  char *typename = malloc(9);
+  
+  // construct an FfiSlice containing the data
+  FfiSlice slice = { extract_pointer(data, typename), LENGTH(data)};
+  
+  // convert the FfiSlice to an AnyObject (or error).
+  // An AnyObject is an opaque C struct that contains the data in a rust-specific representation
+  // AnyObjects may be used interchangeably in the majority of library APIs
+  FfiResult_____AnyObject result = opendp_data__slice_as_object(&slice, typename);
+  
+  // TODO: result unwrapping and return opaque AnyObject struct
+  printf("Success or error: %d\n", result.tag);
+  
+  // the function returns the input just so that the code compiles
+  //return data;
+
+  SEXP XPtr = PROTECT(R_MakeExternalPtr(&result, AnyObject_tag, data));
+  R_RegisterCFinalizerEx(XPtr, _finalizer_AnyObject, TRUE); // important to register the proper fnalizer
+  UNPROTECT(1);
+  
+  return XPtr;
+  
+}
+
+
 /* dll entry points */
 static R_CMethodDef R_CDef[] = {
    {"square_It", (DL_FUNC)&square_It, 1}, /* here you register the DLL entry points to local C functions and explicit the number of arguments */
@@ -149,6 +220,7 @@ static R_CMethodDef R_CDef[] = {
    {"create", (DL_FUNC)&create, 1},
    {"get", (DL_FUNC)&get, 1},
    {"set", (DL_FUNC)&set, 2},
+   {"slice_as_object__wrapper", (DL_FUNC) &slice_as_object__wrapper, 1},
    {NULL, NULL, 0},
 };
 
@@ -157,6 +229,7 @@ void R_init_opendp(DllInfo *info)
 {
     R_registerRoutines(info, R_CDef, NULL, NULL, NULL);
     OPENDP_tag = install("OPENDP_TAG");
+    AnyObject_tag = install("ANYOBJECT_TAG");
     R_useDynamicSymbols(info, TRUE);
 }
 

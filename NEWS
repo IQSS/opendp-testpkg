@@ -1,3 +1,6 @@
+v 0.0.3 - 20230110
+* first version to support opendp.dylib loading
+
 v 0.0.2 - 20230102
 * first version with basic external pointers handling
 * createODP, setODP, getODP functions added
