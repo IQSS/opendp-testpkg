@@ -32,7 +32,8 @@ str(x)
 y <- slice_as_object(c(1L,2L,3L))
 y
 str(y)
-x <- NULL
+x <- NULL # let's remove the object from memory (need to check the finalizer)
+y <- NULL # let's remove the object from memory (need to check the finalizer)
 }
-\keyword{nonparametric}
+\keyword{data}
 

@@ -32,5 +32,5 @@ require(testpkg)
 squareIt(4)
 applyFun(pi/2,sin)
 }
-\keyword{nonparametric}
+\keyword{data}
 

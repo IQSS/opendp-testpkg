@@ -44,5 +44,5 @@ x <- NULL
 # the finalizer will be called internally from C
 # when the R garbage collector frees memory
 }
-\keyword{nonparametric}
+\keyword{data}
 
