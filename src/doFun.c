@@ -205,7 +205,8 @@ SEXP slice_as_object__wrapper(SEXP data) {
   //return data;
 
   SEXP XPtr = PROTECT(R_MakeExternalPtr(&result, AnyObject_tag, data));
-  R_RegisterCFinalizerEx(XPtr, _finalizer_AnyObject, TRUE); // important to register the proper fnalizer
+  R_RegisterCFinalizerEx(XPtr, _finalizer_AnyObject, TRUE); // important to register the proper finalizer
+  // this finalizer will crash R because I'm not cleaning memory correctly yet, need to ask Michael
   UNPROTECT(1);
   
   return XPtr;
